@@ -1,0 +1,21 @@
+# Environments & Secrets
+.env
+*.env
+!.env.example
+
+# Large Data Files (Parquet files > 100MB exceed GitHub file limit)
+Data/*.parquet
+data/*.parquet
+*.parquet
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
