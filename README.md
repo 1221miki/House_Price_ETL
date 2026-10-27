@@ -1,258 +1,295 @@
 # Group Assignment: Designing a Simple Data Pipeline and ETL Process
 
-> **Project:** House Price ETL | Python + Pandas + PostgreSQL  
+> **Project:** NYC Real Estate House Price ETL | Python + Pandas + PostgreSQL  
 > **Course:** Big Data Analytics and Business Intelligence  
-> **Due Date:** 28 October  
+> **Submission Deadline:** 28 October  
 
 ---
 
-## 1. Requirement-to-Evidence Map
+## 1. Assignment Requirement-to-Evidence Map
 
-| # | Requirement (from Brief) | What It Means | How This Project Meets It | Evidence to Show |
+| # | Requirement (from Course Brief) | What It Means | How This Project Meets It | Evidence to Show |
 |---|---|---|---|---|
-| **1** | **Data Source (≥ 2M records)** | Real dataset tied to a business scenario with at least 2 million rows. | US Residential Properties (3.3M) & Sale Events (3.7M) from Hugging Face = **7,009,514 combined rows**. | Screenshot from `py inspect_dataset.py` and PostgreSQL `COUNT(*)`. |
-| **2** | **ETL Process with Pandas** | Python program using Pandas for extract, transform, and load stages. | `etl_pipeline.py`: PyArrow streams batches into Pandas DataFrames, cleaning/deduplication in Pandas, batch load into PostgreSQL. | Source code, console execution log with counts, `stats` dictionary. |
-| **3** | **Database Management (PostgreSQL)** | Store transformed data in PostgreSQL with appropriate schema. | `schema.sql`: `properties` (parent) and `sale_events` (child) with PK/FK relation, `CHECK` constraints, and B-Tree indexes. | `schema.sql`, ER diagram, pgAdmin table screenshots. |
-| **4** | **Group Work & Business Purpose** | Demonstrate teamwork and practical business value. | Defined roles, business scenario, 5 analytical SQL queries (`analysis_queries.sql`) with interpretations. | Team roles table, SQL query outputs, report charts. |
+| **1** | **Data Source (≥ 2M records)** | Real dataset tied to a business scenario with at least 2 million rows. | NYC PLUTO Properties (3.3M) & Historical Sale Events (3.7M) = **7,009,514 combined rows**. | Screenshot from `python scripts/inspect_dataset.py` and PostgreSQL `COUNT(*)`. |
+| **2** | **ETL Process with Pandas** | Python program using Pandas for extract, transform, validate, and load stages. | Modular ETL in `etl/`: PyArrow streams batches into Pandas DataFrames, cleaning & feature engineering in Pandas, data quality assertions in `etl/validate.py`, high-speed `COPY FROM STDIN` bulk load. | Source code, console execution log with batch counts, throughput metrics, and log files in `logs/`. |
+| **3** | **Database Management (PostgreSQL)** | Store transformed data in PostgreSQL with appropriate schema. | `sql/schema.sql`: `properties` (physical tax parcels) and `sale_events` (transaction history) with PK/FK relation on `parcel_id`, `CHECK` constraints, and performance B-Tree indexes. | `sql/schema.sql`, ER diagram, pgAdmin table screenshots, `scripts/verify_database.py`. |
+| **4** | **Business Value & Analysis** | Demonstrate business application and insights. | Business scenario, analytical views (`sql/analytical_views.sql`), 7 analytical queries (`sql/analysis_queries.sql`), visual ASCII charts, and CSV report exports (`scripts/run_analytics.py`). | SQL results, execution screenshots, formatted BI tables in terminal, and CSV exports in `data/processed/`. |
 
 ---
 
-## 2. The 5W1H Overview
+## 2. Project Architecture & Directory Layout
 
-- **WHAT are we building?** A data pipeline: a Python program that reads raw Parquet files, cleans them with Pandas, and stores them in a PostgreSQL database, plus SQL analysis on the stored data.
-- **WHY are we building it?** To gain hands-on experience in ETL pipelines, handle big datasets exceeding RAM limits, and turn raw unstructured property records into a queryable relational database.
-- **WHICH data?** US Residential Properties and Sale Events (NYC region): `properties` file (physical characteristics, building sqft, year built, tax assessments) and `sale_events` file (sale dates, transaction prices, square footage).
-- **WHICH tools?** Python 3, Pandas, PyArrow, SQLAlchemy, psycopg2, PostgreSQL, SQL, VS Code, pgAdmin.
-- **WHERE does data come from?** Hugging Face public repository; stored locally in `House_Price_ETL/Data/`.
-- **WHERE does data go?** PostgreSQL database (`house_price_db`) with relational tables `properties` and `sale_events`.
-- **WHO uses the result?** Real-estate analysts, appraisers, institutional investors, and municipal tax assessors.
-- **WHO does the work?** Group members divided into roles (Data Engineer, Transformation Lead, Database Designer, SQL Analyst, Report Lead).
-- **WHEN?** Due 28 October. Plan: Build & verify today (26th), load full dataset & query (27th), finalize report & submit (28th).
-- **HOW?** Inspect metadata -> Stream batches (Extract) -> Clean & deduplicate in Pandas (Transform) -> Relational batch insert into PostgreSQL (Load) -> Verify counts -> Execute business SQL analysis.
+```text
+House_Price_ETL/
+│
+├── config/
+│   ├── __init__.py
+│   └── database.py                 # PostgreSQL connection pool & SQLAlchemy engine
+│
+├── data/
+│   ├── raw/                        # Original source datasets (> 350 MB, git-ignored)
+│   │   ├── properties-00000-of-00001.parquet   # 3,306,420 rows (NYC PLUTO properties)
+│   │   └── sale_events-00000-of-00001.parquet  # 3,703,094 rows (Historical sale events)
+│   ├── samples/                    # Lightweight test samples (~2 MB, committed to git)
+│   │   ├── properties_sample.parquet           # 25,000 rows (for instant offline demos)
+│   │   └── sale_events_sample.parquet          # 5,138 matched rows (preserves 1:N relations)
+│   └── processed/                  # Exported BI analytics CSVs for Tableau/PowerBI
+│
+├── etl/
+│   ├── __init__.py
+│   ├── extract.py                  # PyArrow chunked batch extractor generator
+│   ├── transform.py                # Pandas data cleaning, BBL normalization, feature engineering
+│   ├── validate.py                 # Data quality rules & anomaly rejection tracking
+│   └── load.py                     # PostgreSQL high-performance COPY FROM STDIN bulk loader
+│
+├── sql/
+│   ├── schema.sql                  # PostgreSQL DDL tables, constraints, and B-Tree indexes
+│   ├── analytical_views.sql        # Advanced analytical BI views (Borough, Tax Equity, Asset Class)
+│   └── analysis_queries.sql        # Executive business analysis queries (Q1-Q7)
+│
+├── scripts/
+│   ├── inspect_dataset.py          # Fast Parquet metadata inspector (proves 7M+ records)
+│   ├── create_sample_dataset.py    # Stratified sample generator (extracts 25k matched records)
+│   ├── generate_quality_report.py  # Generates logs/data_quality_report.md audit report
+│   ├── verify_database.py          # Database integrity, table count, and view verification
+│   └── run_analytics.py            # Automated execution of BI reports + visual charts + CSV export
+│
+├── tests/
+│   ├── __init__.py
+│   ├── test_extract.py             # Unit tests for chunked reader
+│   ├── test_transform.py           # Unit tests for BBL cleaning and borough mapping
+│   ├── test_validate.py            # Unit tests for data quality validation rules
+│   ├── test_load.py                # Unit tests for PostgreSQL staging loader
+│   └── test_quality_and_samples.py # Unit tests for data quality audit & samples
+│
+├── logs/                           # Automated pipeline logs & data_quality_report.md
+│
+├── .env.example                    # Template for database credentials
+├── .env                            # Active private database credentials (git-ignored)
+├── .gitignore                      # Excludes raw datasets, logs, credentials, and caches
+├── requirements.txt                # Python project dependencies
+├── README.md                       # Comprehensive project report & documentation
+└── pipeline.py                     # Master CLI ETL orchestrator (with --sample & RAM profiling)
+```
 
 ---
 
 ## 3. Business Scenario & Problem Statement
 
-### Scenario
-A real estate analytics firm advises homebuyers, commercial property developers, and institutional investors. Raw property attributes and transaction records arrive in compressed Parquet files totaling over 7 million rows. Because data is stored in static files with format inconsistencies, missing keys, and duplicate entries, analysts cannot efficiently perform real-time price queries, tax assessments, or year-over-year appreciation analysis.
+### 3.1 Business Context
+A real estate investment and analytics firm requires a scalable data infrastructure to evaluate property valuation trends, detect undervalued neighborhoods, and audit municipal property tax equity across New York City. The source data arrives in compressed Parquet files totaling **7,009,514 records**:
+1. **Physical Properties (NYC PLUTO)**: Detailed building specifications, lot dimensions, tax assessments, zoning, and geographic coordinates for **3,306,420 parcels**.
+2. **Historical Property Sale Events**: Transaction sale prices, sale dates, deed types, and building sizes for **3,703,094 transaction records**.
 
-### Problem
-Build an automated, robust ETL pipeline that cleans millions of property and transaction records, resolves cross-dataset key mismatches, enforces relational integrity, and loads the data into PostgreSQL for high-speed SQL analytics.
+### 3.2 Problem Statement
+Raw property data contains floating-point formatted IDs (e.g. `2054800111.00000000`), missing addresses, nominal/gift transfers ($0 or $1 sales), invalid construction years, and unindexed static files that cannot be queried efficiently. 
 
-### Business Questions the Database Answers
-1. What is the average property sale price overall and across different years?
-2. Which property types (e.g. single-family, multi-family, commercial) command the highest average sale prices?
-3. Which cities or boroughs exhibit the highest volume of market activity?
-4. How have property prices evolved annually over time?
-5. Which properties have been sold multiple times, and what is their historical price appreciation?
+This project designs and implements an enterprise-grade ETL pipeline that:
+- Extracts data in memory-safe chunks using PyArrow.
+- Cleans and transforms records using Pandas.
+- Validates data against strict financial and structural constraints.
+- Loads records into a normalized PostgreSQL relational database using high-throughput streaming.
+- Deploys analytical views and SQL queries to answer critical real estate investment and tax policy questions.
 
 ---
 
-## 4. Dataset Inspection & Proof of 2 Million Records
+## 4. Dataset Inspection & Proof of 7+ Million Records
 
-Run the inspection script (Section 4.2 of guide):
+Run the inspection script to verify metadata without loading gigabytes of raw data into RAM:
+
 ```bash
-py inspect_dataset.py
+python scripts/inspect_dataset.py
 ```
 
-### Verified Dataset Metadata
+### Verified Dataset Summary
 
-| File Name | Record Count | Columns | Role in Schema |
+| File Name | Record Count | Number of Columns | Primary Entity & Relationship |
 |---|---|---|---|
-| `properties-00000-of-00001.parquet` | **3,306,420** | 32 | Parent Table (One property per row) |
-| `sale_events-00000-of-00001.parquet` | **3,703,094** | 24 | Child Table (Many sales per property) |
-| **Total Records in Dataset** | **7,009,514** | — | **Exceeds 2M record minimum by 350%** |
+| `data/raw/properties-00000-of-00001.parquet` | **3,306,420** | 32 | **Parent Table**: Physical property parcels (1 row per physical parcel) |
+| `data/raw/sale_events-00000-of-00001.parquet` | **3,703,094** | 24 | **Child Table**: Historical sale transactions ($1 : N$ with properties) |
+| **Total Combined Records** | **7,009,514** | — | **Exceeds 2 Million requirement by 350%** |
 
-*(Take a screenshot of `py inspect_dataset.py` console output to include in Section 2 of your report).*
+*(Take a screenshot of the console output of `python scripts/inspect_dataset.py` for Section 2 of your report).*
 
 ---
 
-## 5. Architecture & File Structure
+## 5. Professional Smart Features
 
+### 5.1 Automated Data Quality & Integrity Profiler
+Generate a complete, publication-ready data quality audit report:
+```bash
+python scripts/generate_quality_report.py
 ```
-House_Price_ETL/
-|-- Data/
-|   |-- properties-00000-of-00001.parquet   # 3.3M Parent property records
-|   |-- sale_events-00000-of-00001.parquet  # 3.7M Child transaction events
-|-- inspect_dataset.py                      # Metadata & 2M+ record verification
-|-- etl_pipeline.py                         # Complete Extract-Transform-Load script
-|-- schema.sql                              # DDL schema, PK/FK, CHECK, and indexes
-|-- analysis_queries.sql                    # Q1-Q5 Business analysis SQL queries
-|-- test_connection.py                      # Diagnostic DB connection test
-|-- requirements.txt                        # Dependencies for teammates
-|-- .env.example                            # Configuration template
-|-- .env                                    # Active database credentials
-`-- README.md                               # Project documentation & report guide
+Outputs an executive audit to [`logs/data_quality_report.md`](file:///c:/Users/Student/Desktop/House_Price_ETL/House_Price_ETL/logs/data_quality_report.md) profiling:
+- Null percentage breakdown per column
+- Identification of 379 nominal transfers (< $10,000) vs arms-length market sales
+- Cross-table referential integrity match rate
+- Constraint validation logs
+
+### 5.2 Sub-5-Second Fast Demo Mode (`--sample`)
+To demonstrate the full pipeline during a live classroom presentation without waiting to load 7 million records:
+```bash
+python pipeline.py --init-db --sample
+```
+Uses the curated 25,000-record sample in `data/samples/` preserving 100% referential integrity!
+
+### 5.3 RAM Resource & Memory Profiling
+The pipeline integrates Python's `tracemalloc` to track peak memory consumption:
+```text
+[PERFORMANCE AUDIT] Peak RAM Usage: 48.25 MB
+```
+Proves that chunked streaming maintains a flat, $O(1)$ memory footprint even over millions of rows.
+
+### 5.4 Visual ASCII Charts & CSV Business Exports
+```bash
+# View terminal ASCII bar charts and export CSV tables to data/processed/:
+python scripts/run_analytics.py --export-csv
 ```
 
 ---
 
 ## 6. Environment Setup & Configuration
 
-### 6.1 Install Dependencies
+### 6.1 Prerequisites
+- Python 3.10+ (Tested on Python 3.14)
+- PostgreSQL 12+ (or Docker)
+- Visual Studio Code & pgAdmin 4
+
+### 6.2 Install Dependencies
 ```bash
-py -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-### 6.2 Configure PostgreSQL Connection
-Configure your database credentials in [.env](file:///c:/Users/Student/Desktop/House_Price_ETL/House_Price_ETL/.env) or set `DB_URL`:
+### 6.3 Configure Database Credentials
+Create a `.env` file in the project root (copy from `.env.example`):
 ```ini
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=house_price_db
 DB_USER=postgres
-DB_PASSWORD=your_password
+DB_PASSWORD=postgres
+
+# Batch processing configuration
+BATCH_SIZE=50000
+# Optional limit for testing (e.g., 50000) or leave blank for full 7M+ records
+MAX_RECORDS=
 ```
 
-*(Alternatively, run a local PostgreSQL Docker container in one step:)*
+---
+
+## 7. PostgreSQL Database Schema Design (`sql/schema.sql`)
+
+### 7.1 Relational Architecture
+
+```
++------------------------------------------+          +------------------------------------------+
+|                properties                |          |               sale_events                |
++------------------------------------------+          +------------------------------------------+
+| record_id VARCHAR(64) [PK]               |          | sale_id VARCHAR(64) [PK]                 |
+| parcel_id VARCHAR(20) [NOT NULL, BBL]    |<--(1:N)--| parcel_id VARCHAR(20) [BBL Index]        |
+| borough VARCHAR(50)                      |          | borough VARCHAR(50)                      |
+| address_line VARCHAR(255)                |          | address_line VARCHAR(255)                |
+| unit VARCHAR(50)                         |          | unit VARCHAR(50)                         |
+| city VARCHAR(100), state VARCHAR(10)     |          | city VARCHAR(100), state VARCHAR(10)     |
+| zip_code VARCHAR(20), country VARCHAR(10)|          | zip_code VARCHAR(20), country VARCHAR(10)|
+| latitude, longitude DOUBLE PRECISION     |          | latitude, longitude DOUBLE PRECISION     |
+| property_type VARCHAR(50)                |          | property_class_raw VARCHAR(20)           |
+| property_class_raw VARCHAR(20)           |          | sale_price NUMERIC(15,2) [CHECK > 0]     |
+| building_sqft NUMERIC(12,2)              |          | sale_date DATE [NOT NULL]                |
+| lot_sqft NUMERIC(12,2)                   |          | sale_year INT, sale_quarter INT          |
+| year_built INT                           |          | sale_month INT                           |
+| stories NUMERIC(5,1), units_total INT    |          | building_sqft NUMERIC(12,2)              |
+| zoning VARCHAR(50), school_district      |          | price_per_sqft NUMERIC(12,2)             |
+| assessed_value NUMERIC(15,2)             |          | year_built INT                           |
+| assessed_land_value NUMERIC(15,2)        |          | property_age_at_sale INT                 |
+| market_value NUMERIC(15,2)               |          | is_multi_parcel BOOLEAN                  |
+| assessment_year INT                      |          | created_at TIMESTAMP                     |
+| created_at TIMESTAMP                     |          +------------------------------------------+
++------------------------------------------+
+```
+
+### 7.2 Key Architectural Decisions
+1. **Relational Normalization ($1 : N$):** Separates static parcel characteristics (`properties`) from multiple historical transactions (`sale_events`), eliminating repetitive storage of building geometry.
+2. **Standardized Borough-Block-Lot (`parcel_id`):** Standardizes NYC's 10-digit tax parcel numbering scheme, stripping scientific notation and trailing zeroes.
+3. **Financial Precision:** `NUMERIC(15,2)` prevents floating-point rounding inaccuracies on million-dollar properties.
+4. **Data Integrity Constraints:** `CHECK (sale_price > 0)` and `sale_date NOT NULL` prevent non-arms-length transfers and corrupt transaction records.
+5. **High-Performance B-Tree Indexes:** Dedicated indexes on `(parcel_id)`, `(sale_date)`, `(sale_year, sale_quarter)`, `(borough)`, and `(zip_code)` guarantee millisecond query performance across 7M+ rows.
+
+---
+
+## 8. Running the ETL Pipeline (`pipeline.py`)
+
+### 8.1 Execute Full Pipeline (Initialize DB + Load All Records)
 ```bash
-docker run --name pg-housing -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=house_price_db -p 5432:5432 -d postgres:16
+python pipeline.py --init-db
 ```
 
-### 6.3 Test Database Connection
+### 8.2 Run Fast Development Test (50,000 Records)
 ```bash
-py test_connection.py
+python pipeline.py --init-db --limit 50000
 ```
 
----
-
-## 7. PostgreSQL Schema Design (`schema.sql`)
-
-### Entity-Relationship Diagram
-
-```
-+------------------------------------+          +------------------------------------+
-|             properties             |          |            sale_events             |
-+------------------------------------+          +------------------------------------+
-| property_id VARCHAR(64) [PK]       |<--(1:N)--| sale_id BIGSERIAL [PK]             |
-| property_type VARCHAR(60)          |          | property_id VARCHAR(64) [FK]       |
-| city VARCHAR(120)                  |          | sale_date DATE                     |
-| state VARCHAR(60)                  |          | sale_price NUMERIC(14,2)           |
-| zip_code VARCHAR(20)               |          |   CHECK (sale_price > 0)           |
-| building_sqft NUMERIC(12,2)        |          | building_sqft NUMERIC(12,2)        |
-| lot_sqft NUMERIC(12,2)             |          | year_built INT                     |
-| year_built INT                     |          +------------------------------------+
-| bedrooms NUMERIC(5,1)              |
-| assessed_value NUMERIC(15,2)       |
-+------------------------------------+
-```
-
-### Schema Design Justifications
-1. **Two Normalized Tables:** Separates static physical property attributes from dynamic transaction events, eliminating data redundancy.
-2. **Standardized Primary Key (`property_id`):** Standardizes NYC 10-digit BBL identifiers (`parcel_id`), stripping trailing decimals (`2054800111.00000000` -> `2054800111`).
-3. **Foreign Key Integrity:** `sale_events.property_id` references `properties(property_id)`. During ETL, orphan transactions (sales without a matching property) are filtered and logged.
-4. **Data Integrity Constraints:** `NUMERIC(14,2)` prevents floating-point rounding errors on financial values. `CHECK (sale_price > 0)` prevents invalid zero/negative transactions.
-5. **Targeted B-Tree Indexes:** Indexes on `(property_id)`, `(sale_date)`, and `(state, city)` accelerate join and filtering queries across millions of rows.
-
----
-
-## 8. Running the ETL Pipeline (`etl_pipeline.py`)
-
-### 8.1 Execute Pipeline
+### 8.3 Run Offline Sample Demo (Sub-5-second demonstration)
 ```bash
-# Full dataset load with automatic schema creation:
-py etl_pipeline.py
-
-# Optional: Run a test load on the first 50,000 rows first:
-py etl_pipeline.py --limit 50000
+python pipeline.py --init-db --sample
 ```
 
-### 8.2 Data-Quality Log Template (Copy into Report Section 5)
-
-| Stage | Metric Name | Records | Description / Quality Decision |
-|---|---|---|---|
-| **Raw Properties** | `pf.metadata.num_rows` | **3,306,420** | Source record count in Parquet metadata |
-| **Raw Sale Events** | `pf.metadata.num_rows` | **3,703,094** | Source record count in Parquet metadata |
-| **Property Duplicates Removed** | `stats['props_dupes']` | *(from console)* | Repeated property IDs dropped within batch and against `seen_ids` |
-| **Sale Duplicates Removed** | `stats['sales_dupes']` | *(from console)* | Exact duplicate transaction rows removed |
-| **Invalid Prices Removed** | `stats['sales_bad_price']` | *(from console)* | Non-positive, zero, or negative prices filtered |
-| **Orphan Sales Removed** | `stats['sales_orphans']` | *(from console)* | Sales referencing a `property_id` not found in `properties` table |
-| **Final Properties in PostgreSQL** | `COUNT(*) FROM properties` | *(from console)* | Clean, verified parent property records |
-| **Final Sales in PostgreSQL** | `COUNT(*) FROM sale_events` | *(from console)* | Clean, verified child transaction records |
+### 8.4 Pipeline CLI Options
+- `--init-db`: Executes `sql/schema.sql` to initialize tables, constraints, and indexes.
+- `--sample`: Uses lightweight 25k records from `data/samples/` for fast demo.
+- `--batch-size 50000`: Sets the streaming batch size for chunked processing.
+- `--limit 100000`: Limits record extraction for quick validation.
+- `--skip-properties`: Skips loading the properties table.
+- `--skip-sales`: Skips loading the sale_events table.
+- `--apply-views`: Creates the analytical views in `sql/analytical_views.sql` (enabled by default).
 
 ---
 
-## 9. Business Analysis Queries (`analysis_queries.sql`)
+## 9. Database Verification & Analytics
 
-Run these queries in **pgAdmin Query Tool** or via Python to generate report charts:
-
-### Q1: Overall Average Sale Price
-```sql
-SELECT ROUND(AVG(sale_price), 2) AS avg_price FROM sale_events;
+### 9.1 Verify Database Tables & Row Counts
+```bash
+python scripts/verify_database.py
 ```
 
-### Q2: Average Price and Volume by Property Type
-```sql
-SELECT 
-    p.property_type, 
-    COUNT(*) AS sales, 
-    ROUND(AVG(s.sale_price), 2) AS avg_price
-FROM sale_events s 
-JOIN properties p ON p.property_id = s.property_id
-GROUP BY p.property_type 
-ORDER BY avg_price DESC;
+### 9.2 Run Automated Business Intelligence Reports
+```bash
+python scripts/run_analytics.py --export-csv
 ```
+Generates terminal reports and visual charts:
+1. **Market Trends by Borough (2020-Present)**
+2. **Asset Class Valuation Comparison**
+3. **Assessment-to-Sale Ratio Equity Audit**
+4. **Top Appreciating Neighborhood Zip Codes**
 
-### Q3: Top 10 Cities / Boroughs by Sales Volume
-```sql
-SELECT 
-    p.city, p.state, 
-    COUNT(*) AS sales,
-    ROUND(AVG(s.sale_price), 2) AS avg_price
-FROM sale_events s 
-JOIN properties p ON p.property_id = s.property_id
-GROUP BY p.city, p.state 
-ORDER BY sales DESC LIMIT 10;
-```
-
-### Q4: Historical Price Trend by Year
-```sql
-SELECT 
-    EXTRACT(YEAR FROM sale_date) AS yr, 
-    COUNT(*) AS sales,
-    ROUND(AVG(sale_price), 2) AS avg_price
-FROM sale_events 
-WHERE sale_date IS NOT NULL
-GROUP BY yr ORDER BY yr;
-```
-
-### Q5: Repeat Sales & Property Value Appreciation
-```sql
-SELECT 
-    property_id, 
-    COUNT(*) AS times_sold, 
-    MIN(sale_price) AS lowest, 
-    MAX(sale_price) AS highest,
-    ROUND(MAX(sale_price) - MIN(sale_price), 2) AS appreciation
-FROM sale_events 
-GROUP BY property_id 
-HAVING COUNT(*) > 1
-ORDER BY times_sold DESC LIMIT 20;
-```
+Exports clean CSV tables to `data/processed/` ready for insertion into presentation slides.
 
 ---
 
-## 10. Suggested Group Roles & Work Distribution
+## 10. Running Automated Unit Tests
 
-| Role | Team Member | Responsibilities | Deliverables |
-|---|---|---|---|
-| **Data Engineer (Extract)** | [Member 1] | Inspect Parquet metadata, verify 2M+ record threshold, configure batch reader. | `inspect_dataset.py` output, metadata screenshot. |
-| **Transformation Lead** | [Member 2] | Implement data cleaning, BBL key normalization, deduplication, and quality tracking. | `clean_props()`, `clean_sales()`, Data Quality Table. |
-| **Database Designer** | [Member 3] | Design schema DDL, primary/foreign keys, indexes, and database verification. | `schema.sql`, ER Diagram, pgAdmin screenshots. |
-| **SQL Analyst** | [Member 4] | Execute analytical queries, extract CSV results, create charts. | `analysis_queries.sql`, SQL results tables, charts. |
-| **Report & Presentation Lead**| [Member 5] | Compile report document, prepare 8-10 presentation slides, coordinate final submission. | Final Report PDF, Slides. |
+Execute the automated test suite covering all ETL components:
+
+```bash
+python -m unittest discover tests -v
+```
+
+### Test Suite Coverage (13 Tests Passing):
+- `test_extract.py`: Tests Parquet metadata inspection and chunked batch generation.
+- `test_transform.py`: Tests BBL parcel ID cleaning, borough derivation, zip code padding, and derived financial metrics.
+- `test_validate.py`: Tests business validation rules and rejection counters for corrupt/anomalous rows.
+- `test_load.py`: Tests in-memory CSV buffer streaming and staging table conflict resolution.
+- `test_quality_and_samples.py`: Tests sample dataset generation and data quality report consistency.
 
 ---
 
 ## 11. Final Submission Checklist
 
-- [x] Dataset has at least 2 million records (Confirmed: **7,009,514** records).
-- [x] Metadata proof screenshot ready from `inspect_dataset.py`.
-- [x] Clear business scenario and problem statement documented.
-- [x] Python & Pandas utilized for Extract, Transform, and Load stages.
-- [x] PostgreSQL relational schema designed with Primary Keys, Foreign Keys, and Indexes.
-- [x] Data quality summary logged (`props_dupes`, `sales_bad_price`, `sales_orphans`).
-- [x] 5 business analysis queries executed with interpretations.
-- [x] Passwords removed from code (using `.env` / environment variables).
-- [x] Ready before the 28 October deadline to avoid late submission penalties.
+- [x] **Data Source**: Minimum 2 million records verified (**7,009,514 records**).
+- [x] **Business Scenario**: Realistic real estate market valuation & municipal tax equity problem.
+- [x] **Python & Pandas ETL**: Full Extract, Transform, Validate, and Load stages implemented.
+- [x] **Database Management**: PostgreSQL relational schema with PK/FK logic, constraints, and indexes.
+- [x] **Analytical Queries**: 7 business SQL queries + 4 PostgreSQL views + Python automated reporting.
+- [x] **Unit Testing**: Complete `unittest` test suite with 13 passing tests.
+- [x] **Security**: Credentials externalized to `.env`, raw datasets and secrets ignored by `.gitignore`.
+- [x] **Timeliness**: Ready before the **28 October** deadline.

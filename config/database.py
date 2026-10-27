@@ -8,37 +8,62 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("DB_URL")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "house_price_db")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+DB_SSLMODE = os.getenv("DB_SSLMODE", "prefer")
 
 def get_connection_params():
     """Return dictionary of connection parameters."""
-    return {
+    params = {
         "host": DB_HOST,
         "port": DB_PORT,
         "dbname": DB_NAME,
         "user": DB_USER,
         "password": DB_PASSWORD,
     }
+    if DB_SSLMODE:
+        params["sslmode"] = DB_SSLMODE
+    return params
 
 def get_db_connection():
-    """Create and return a raw psycopg2 connection."""
-    params = get_connection_params()
-    return psycopg2.connect(**params)
+    """Create and return a raw psycopg2 connection (supports Neon cloud & local)."""
+    if DATABASE_URL:
+        # Handles connection string format from Neon (postgresql://...)
+        conn_str = DATABASE_URL
+        if conn_str.startswith("postgresql://") and "sslmode" not in conn_str:
+            separator = "&" if "?" in conn_str else "?"
+            conn_str = f"{conn_str}{separator}sslmode=require"
+        return psycopg2.connect(conn_str)
+    else:
+        params = get_connection_params()
+        return psycopg2.connect(**params)
 
 def get_db_engine():
     """Create and return a SQLAlchemy engine."""
-    url = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    return create_engine(url)
+    if DATABASE_URL:
+        url = DATABASE_URL
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+        elif url.startswith("postgresql://") and not url.startswith("postgresql+psycopg2://"):
+            url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        return create_engine(url)
+    else:
+        url = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        return create_engine(url)
 
 def ensure_database_exists():
     """
     Connects to the default 'postgres' database and creates the target database
-    if it does not already exist.
+    if it does not already exist (for local instances).
     """
+    if DATABASE_URL:
+        # Cloud providers like Neon manage database creation in their web console
+        return True
+        
     try:
         conn = psycopg2.connect(
             host=DB_HOST,
@@ -60,28 +85,21 @@ def ensure_database_exists():
         conn.close()
         return True
     except Exception as e:
-        print(f"[Database Setup Error] Could not verify/create database: {e}")
+        print(f"[Database Setup Warning] Could not verify/create database: {e}")
         return False
 
 def test_connection():
-    """Test connection to the PostgreSQL database."""
-    print("Testing connection to PostgreSQL...")
-    print(f"Host: {DB_HOST}:{DB_PORT} | Database: {DB_NAME} | User: {DB_USER}")
+    """Test if PostgreSQL database is reachable."""
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT version();")
-        version = cur.fetchone()[0]
-        cur.close()
+        with conn.cursor() as cur:
+            cur.execute("SELECT version();")
+            ver = cur.fetchone()[0]
+            print(f"[Database Connected] {ver.split(',')[0]}")
         conn.close()
-        print(f"SUCCESS: Connected to PostgreSQL!\nVersion: {version}")
         return True
     except Exception as e:
-        print(f"FAILED: Connection failed.\nError: {e}")
-        print("\nTroubleshooting tips:")
-        print("1. Ensure PostgreSQL is running on host and port specified in .env.")
-        print(f"2. Ensure the database '{DB_NAME}' exists or run ensure_database_exists().")
-        print("3. Verify username and password in .env.")
+        print(f"[Connection Error] {e}")
         return False
 
 if __name__ == "__main__":

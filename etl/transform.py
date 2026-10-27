@@ -46,12 +46,6 @@ def clean_zip_code(series: pd.Series) -> pd.Series:
 def transform_properties(df: pd.DataFrame) -> pd.DataFrame:
     """
     Transform and clean raw NYC PLUTO properties chunk.
-    
-    Applies:
-    - Parcel ID standardization
-    - Borough mapping from BBL
-    - Type casting & validation for years, stories, and assessments
-    - String normalization (trimming, title-casing)
     """
     df = df.copy()
     
@@ -66,16 +60,27 @@ def transform_properties(df: pd.DataFrame) -> pd.DataFrame:
     # Deduplicate within batch
     df = df.drop_duplicates(subset=['record_id'])
     
-    # 2. Derive geographic fields
+    # 2. Ensure optional columns exist
+    for col in [
+        'city', 'state', 'zip_code', 'country', 'address_line', 'unit',
+        'property_type', 'property_class_raw', 'zoning', 'school_district',
+        'latitude', 'longitude', 'building_sqft', 'lot_sqft', 'year_built',
+        'stories', 'units_total', 'assessed_value', 'assessed_land_value',
+        'market_value', 'assessment_year'
+    ]:
+        if col not in df.columns:
+            df[col] = np.nan
+
+    # 3. Derive geographic fields
     df['borough'] = derive_borough(df)
     df['city'] = df['city'].fillna(df['borough']).astype(str).str.strip().str.title()
     df['state'] = df['state'].fillna('NY').astype(str).str.strip().str.upper()
     df['zip_code'] = clean_zip_code(df['zip_code'])
     df['country'] = df['country'].fillna('US').astype(str).str.strip().str.upper()
     
-    # 3. Clean textual fields
-    df['address_line'] = df['address_line'].fillna('').astype(str).str.strip().str.upper()
-    df['unit'] = df['unit'].fillna('').astype(str).str.strip().str.upper()
+    # 4. Clean textual fields
+    df['address_line'] = df['address_line'].astype(str).replace(['nan', 'None', '<NA>'], '').str.strip().str.upper()
+    df['unit'] = df['unit'].astype(str).replace(['nan', 'None', '<NA>'], '').str.strip().str.upper()
     df['unit'] = df['unit'].replace(['NAN', 'NONE', ''], None)
     df['property_type'] = df['property_type'].fillna('unknown').astype(str).str.strip().str.lower()
     df['property_class_raw'] = df['property_class_raw'].fillna('').astype(str).str.strip()
@@ -83,25 +88,26 @@ def transform_properties(df: pd.DataFrame) -> pd.DataFrame:
     df['school_district'] = df['school_district'].astype(str).str.split('.').str[0].str.strip()
     df['school_district'] = df['school_district'].replace(['nan', 'None', ''], None)
     
-    # 4. Numeric and type validation
+    # 5. Numeric and type validation
     df['latitude'] = pd.to_numeric(df['latitude'], errors='coerce')
     df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
     
     df['building_sqft'] = pd.to_numeric(df['building_sqft'], errors='coerce').clip(lower=0)
     df['lot_sqft'] = pd.to_numeric(df['lot_sqft'], errors='coerce').clip(lower=0)
     
-    # Year built: allow valid historic and modern years (1600 - 2026)
+    # Year built: allow valid historic and modern years (1600 - 2026) as nullable Int64
     year_built = pd.to_numeric(df['year_built'], errors='coerce')
-    df['year_built'] = np.where((year_built >= 1600) & (year_built <= 2026), year_built, np.nan)
+    clean_year = np.where((year_built >= 1600) & (year_built <= 2026), year_built, np.nan)
+    df['year_built'] = pd.Series(clean_year, dtype='Int64')
     
     df['stories'] = pd.to_numeric(df['stories'], errors='coerce').clip(lower=0, upper=150)
-    df['units_total'] = pd.to_numeric(df['units_total'], errors='coerce').clip(lower=0)
+    df['units_total'] = pd.Series(pd.to_numeric(df['units_total'], errors='coerce').clip(lower=0), dtype='Int64')
     
     df['assessed_value'] = pd.to_numeric(df['assessed_value'], errors='coerce').clip(lower=0)
     df['assessed_land_value'] = pd.to_numeric(df['assessed_land_value'], errors='coerce').clip(lower=0)
     df['market_value'] = pd.to_numeric(df['market_value'], errors='coerce').clip(lower=0)
     
-    df['assessment_year'] = pd.to_numeric(df['assessment_year'], errors='coerce')
+    df['assessment_year'] = pd.Series(pd.to_numeric(df['assessment_year'], errors='coerce'), dtype='Int64')
     
     target_columns = [
         'record_id', 'parcel_id', 'borough', 'address_line', 'unit', 'city', 'state',
@@ -116,64 +122,65 @@ def transform_properties(df: pd.DataFrame) -> pd.DataFrame:
 def transform_sales(df: pd.DataFrame) -> pd.DataFrame:
     """
     Transform and clean raw NYC sale events chunk.
-    
-    Applies:
-    - Standardizes parcel_id
-    - Date parsing & temporal feature extraction (year, quarter, month)
-    - Feature engineering:
-        * price_per_sqft = sale_price / building_sqft
-        * property_age_at_sale = sale_year - year_built
-    - Filters invalid sale prices (<= 0)
     """
     df = df.copy()
     
     # 1. Clean primary keys
-    df['sale_id'] = df['record_id'].astype(str).str.strip()
+    if 'record_id' in df.columns and 'sale_id' not in df.columns:
+        df['sale_id'] = df['record_id'].astype(str).str.strip()
+    elif 'sale_id' in df.columns:
+        df['sale_id'] = df['sale_id'].astype(str).str.strip()
+        
     df['parcel_id'] = clean_parcel_id(df['parcel_id'])
     
-    # Drop rows without record_id
+    # Drop rows without sale_id
     df = df.dropna(subset=['sale_id'])
     df = df.drop_duplicates(subset=['sale_id'])
     
     # 2. Date parsing and temporal features
     df['sale_date_dt'] = pd.to_datetime(df['sale_date'], errors='coerce')
-    # Filter out records with invalid dates
     df = df.dropna(subset=['sale_date_dt'])
     
     df['sale_date'] = df['sale_date_dt'].dt.date
-    df['sale_year'] = df['sale_date_dt'].dt.year.astype(int)
-    df['sale_quarter'] = df['sale_date_dt'].dt.quarter.astype(int)
-    df['sale_month'] = df['sale_date_dt'].dt.month.astype(int)
+    df['sale_year'] = pd.Series(df['sale_date_dt'].dt.year, dtype='Int64')
+    df['sale_quarter'] = pd.Series(df['sale_date_dt'].dt.quarter, dtype='Int64')
+    df['sale_month'] = pd.Series(df['sale_date_dt'].dt.month, dtype='Int64')
     
     # 3. Numeric conversions & cleaning
     df['sale_price'] = pd.to_numeric(df['sale_price'], errors='coerce')
-    # Keep sales with positive price
     df = df[df['sale_price'] > 0]
     
     df['building_sqft'] = pd.to_numeric(df['building_sqft'], errors='coerce')
-    df['year_built'] = pd.to_numeric(df['year_built'], errors='coerce')
-    df['year_built'] = np.where((df['year_built'] >= 1600) & (df['year_built'] <= 2026), df['year_built'], np.nan)
+    
+    year_num = pd.to_numeric(df['year_built'], errors='coerce')
+    clean_year = np.where((year_num >= 1600) & (year_num <= 2026), year_num, np.nan)
+    df['year_built'] = pd.Series(clean_year, dtype='Int64')
     
     # 4. Feature Engineering
-    # A) Price per square foot (calculated when building_sqft > 50)
     valid_sqft = (df['building_sqft'] > 50) & (df['building_sqft'] < 2000000)
     df['price_per_sqft'] = np.where(valid_sqft, (df['sale_price'] / df['building_sqft']).round(2), np.nan)
     
-    # B) Property age at time of sale
-    df['property_age_at_sale'] = np.where(
+    age = np.where(
         df['year_built'].notnull(),
         (df['sale_year'] - df['year_built']).clip(lower=0, upper=300),
         np.nan
     )
+    df['property_age_at_sale'] = pd.Series(age, dtype='Int64')
     
     # 5. Geographic & Address cleaning
+    for col in ['address_line', 'unit', 'city', 'state', 'zip_code', 'country', 'latitude', 'longitude', 'property_class_raw']:
+        if col not in df.columns:
+            df[col] = np.nan
+    if 'is_multi_parcel' not in df.columns:
+        df['is_multi_parcel'] = False
+
     df['borough'] = derive_borough(df)
     df['city'] = df['city'].fillna(df['borough']).astype(str).str.strip().str.title()
     df['state'] = df['state'].fillna('NY').astype(str).str.strip().str.upper()
     df['zip_code'] = clean_zip_code(df['zip_code'])
     df['country'] = df['country'].fillna('US').astype(str).str.strip().str.upper()
-    df['address_line'] = df['address_line'].fillna('').astype(str).str.strip().str.upper()
-    df['unit'] = df['unit'].fillna('').astype(str).str.strip().str.upper()
+    df['address_line'] = df['address_line'].astype(str).replace(['nan', 'None', '<NA>'], '').str.strip().str.upper()
+    df['unit'] = df['unit'].astype(str).replace(['nan', 'None', '<NA>'], '').str.strip().str.upper()
     df['unit'] = df['unit'].replace(['NAN', 'NONE', ''], None)
     
     df['latitude'] = pd.to_numeric(df['latitude'], errors='coerce')
