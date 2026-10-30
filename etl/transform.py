@@ -15,10 +15,11 @@ def clean_parcel_id(series: pd.Series) -> pd.Series:
     Removes trailing decimals (e.g. '2054800111.00000000' -> '2054800111').
     """
     return (
-        series.astype(str)
-        .str.split('.').str[0]
+        series.fillna('')
+        .astype(str)
+        .str.replace(r'\..*$', '', regex=True)
         .str.strip()
-        .replace(['nan', 'None', '', '<NA>'], np.nan)
+        .replace(['nan', 'None', '', '<NA>', 'null', 'NULL'], np.nan)
     )
 
 def derive_borough(df: pd.DataFrame) -> pd.Series:
@@ -26,7 +27,7 @@ def derive_borough(df: pd.DataFrame) -> pd.Series:
     Derives borough name using the first character of the standardized parcel_id,
     falling back to existing 'city' column.
     """
-    bbl_prefix = df['parcel_id'].astype(str).str[0]
+    bbl_prefix = df['parcel_id'].fillna('').astype(str).str[0]
     mapped = bbl_prefix.map(BOROUGH_MAP)
     
     if 'city' in df.columns:
@@ -35,13 +36,14 @@ def derive_borough(df: pd.DataFrame) -> pd.Series:
 
 def clean_zip_code(series: pd.Series) -> pd.Series:
     """Standardize zip code format to 5 digits."""
-    return (
-        series.astype(str)
-        .str.split('.').str[0]
+    cleaned = (
+        series.fillna('')
+        .astype(str)
+        .str.replace(r'\..*$', '', regex=True)
         .str.strip()
-        .str.zfill(5)
-        .replace(['00nan', '00000', '0None', '0<NA>'], np.nan)
+        
     )
+    return cleaned.apply(lambda z: z.zfill(5) if z and z.isdigit() and z != '00000' and int(z) > 0 else np.nan)
 
 def transform_properties(df: pd.DataFrame) -> pd.DataFrame:
     """

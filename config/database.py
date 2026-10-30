@@ -42,6 +42,8 @@ def get_db_connection():
         params = get_connection_params()
         return psycopg2.connect(**params)
 
+from urllib.parse import quote_plus
+
 def get_db_engine():
     """Create and return a SQLAlchemy engine."""
     if DATABASE_URL:
@@ -52,7 +54,8 @@ def get_db_engine():
             url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
         return create_engine(url)
     else:
-        url = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        encoded_pass = quote_plus(DB_PASSWORD) if DB_PASSWORD else ""
+        url = f"postgresql+psycopg2://{DB_USER}:{encoded_pass}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         return create_engine(url)
 
 def ensure_database_exists():

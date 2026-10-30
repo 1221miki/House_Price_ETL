@@ -153,6 +153,7 @@ def generate_quality_report():
     
     # Save Report
     report_path = ROOT_DIR / "logs" / "data_quality_report.md"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(report_lines))
         
