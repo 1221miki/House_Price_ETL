@@ -85,7 +85,7 @@ def transform_properties(df: pd.DataFrame) -> pd.DataFrame:
     df['unit'] = df['unit'].astype(str).replace(['nan', 'None', '<NA>'], '').str.strip().str.upper()
     df['unit'] = df['unit'].replace(['NAN', 'NONE', ''], None)
     df['property_type'] = df['property_type'].fillna('unknown').astype(str).str.strip().str.lower()
-    df['property_class_raw'] = df['property_class_raw'].fillna('').astype(str).str.strip()
+    df['property_class_raw'] = df['property_class_raw'].fillna('').astype(str).str.strip().str.slice(0, 100)
     df['zoning'] = df['zoning'].fillna('').astype(str).str.strip()
     df['school_district'] = df['school_district'].astype(str).str.split('.').str[0].str.strip()
     df['school_district'] = df['school_district'].replace(['nan', 'None', ''], None)
@@ -187,7 +187,7 @@ def transform_sales(df: pd.DataFrame) -> pd.DataFrame:
     
     df['latitude'] = pd.to_numeric(df['latitude'], errors='coerce')
     df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
-    df['property_class_raw'] = df['property_class_raw'].fillna('').astype(str).str.strip()
+    df['property_class_raw'] = df['property_class_raw'].fillna('').astype(str).str.strip().str.slice(0, 100)
     df['is_multi_parcel'] = df['is_multi_parcel'].fillna(False).astype(bool)
     
     target_columns = [
