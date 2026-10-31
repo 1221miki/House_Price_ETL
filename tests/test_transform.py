@@ -62,3 +62,5 @@ class TestTransform(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# Test suite verifying BBL regex stripping and financial feature formulas
