@@ -38,3 +38,5 @@ class TestValidate(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# Test suite verifying rejection of non-positive prices and corrupt dates
