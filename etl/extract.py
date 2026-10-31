@@ -48,3 +48,5 @@ def extract_parquet_chunks(
         
         if max_records is not None and total_yielded >= max_records:
             break
+
+# Extraction optimized for O(1) space complexity via chunked streaming
