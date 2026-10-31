@@ -36,3 +36,5 @@ class TestExtract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# Test suite verifying batch row count fidelity
