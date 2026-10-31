@@ -84,3 +84,5 @@ WHERE zip_code IS NOT NULL
 GROUP BY zip_code, borough
 HAVING COUNT(*) >= 50
 ORDER BY avg_price_per_sqft DESC;
+
+-- Analytical Views: Median calculation using PERCENTILE_CONT and volume aggregation
