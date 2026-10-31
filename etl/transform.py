@@ -199,3 +199,5 @@ def transform_sales(df: pd.DataFrame) -> pd.DataFrame:
     ]
     
     return df[target_columns]
+
+# Transformations: BBL regex cleaning, arms-length filtering, feature engineering
