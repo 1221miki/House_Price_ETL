@@ -3,7 +3,8 @@
 *.env
 !.env.example
 
-# Large Data Files (Ignore all Parquet files > 100MB)
+# Large Data Files (Ignore all Parquet files > 100MB and zip archives)
+*.zip
 Data/**/*.parquet
 data/**/*.parquet
 Data/*.parquet
