@@ -32,3 +32,5 @@ class TestLoad(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# Test suite verifying idempotent loading via ON CONFLICT DO NOTHING
