@@ -293,3 +293,5 @@ python -m unittest discover tests -v
 - [x] **Unit Testing**: Complete `unittest` test suite with 13 passing tests.
 - [x] **Security**: Credentials externalized to `.env`, raw datasets and secrets ignored by `.gitignore`.
 - [x] **Timeliness**: Ready before the **28 October** deadline.
+
+<!-- Verified against course brief: Big Data Analytics & BI -->
