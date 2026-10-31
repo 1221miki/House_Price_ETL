@@ -118,3 +118,5 @@ GROUP BY parcel_id
 HAVING COUNT(*) >= 3
 ORDER BY transaction_count DESC, total_nominal_appreciation DESC
 LIMIT 20;
+
+-- Queries designed for municipal tax equity and neighborhood appreciation analysis
