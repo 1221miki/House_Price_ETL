@@ -88,3 +88,5 @@ CREATE INDEX idx_sales_parcel_id ON sale_events(parcel_id);
 CREATE INDEX idx_sales_date ON sale_events(sale_date);
 CREATE INDEX idx_sales_borough_year ON sale_events(borough, sale_year);
 CREATE INDEX idx_sales_price ON sale_events(sale_price);
+
+-- Schema normalized to 3NF decoupling physical parcels from sale events
