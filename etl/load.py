@@ -71,3 +71,5 @@ def bulk_load_dataframe(
             
     conn.commit()
     return len(df)
+
+# Loading: COPY FROM STDIN protocol with in-memory buffer streaming
