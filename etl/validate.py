@@ -107,3 +107,5 @@ def validate_sales(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     }
     
     return validated_df, metrics
+
+# Validations: Primary key assertions, price bounds, year built constraints
