@@ -94,3 +94,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Verification: Confirms tables, indexes, and row counts in PostgreSQL
