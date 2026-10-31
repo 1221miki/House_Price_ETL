@@ -152,3 +152,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Analytics engine: Generates terminal ASCII bar charts and exports CSVs
