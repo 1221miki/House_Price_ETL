@@ -1,6 +1,15 @@
 """
 Main Execution Entry Point for NYC Real Estate ETL Data Pipeline.
 Course: Big Data Analytics and Business Intelligence
+Instructor: Derbew Felasman
+Institution: Debre Berhan University (DBU)
+
+Group Members & Authors:
+  1. Asamnew Agiz    - ID: DBU1601394
+  2. Solomon Tadese  - ID: DBU1601626
+  3. Dagmawit Eshete - ID: DBU1601878
+  4. Jemal Yimer     - ID: DBU1601836
+
 Delegates directly to pipeline.py orchestrator.
 """
 import sys
@@ -15,3 +24,4 @@ from pipeline import main
 
 if __name__ == "__main__":
     main()
+

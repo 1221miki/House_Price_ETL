@@ -1,3 +1,16 @@
+"""
+NYC Real Estate Valuation & Transaction ETL Pipeline Orchestrator.
+Course: Big Data Analytics and Business Intelligence
+Instructor: Derbew Felasman
+Institution: Debre Berhan University (DBU)
+
+Group Members & Contributors:
+  1. Asamnew Agiz    - ID: DBU1601394
+  2. Solomon Tadese  - ID: DBU1601626
+  3. Dagmawit Eshete - ID: DBU1601878
+  4. Jemal Yimer     - ID: DBU1601836
+"""
+
 import os
 import sys
 import time

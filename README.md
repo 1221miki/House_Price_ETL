@@ -2,7 +2,20 @@
 
 > **Project:** NYC Real Estate House Price ETL | Python + Pandas + PostgreSQL  
 > **Course:** Big Data Analytics and Business Intelligence  
-> **Submission Deadline:** 28 October  
+> **Instructor:** Derbew Felasman  
+> **Institution:** Debre Berhan University (DBU)  
+> **Submission Date:** November 2026  
+
+---
+
+### 👥 Project Team Members
+
+| No. | Student Full Name | Student ID | Institution | Project Role |
+| :---: | :--- | :---: | :---: | :--- |
+| **1** | **Asamnew Agiz** | `DBU1601394` | Debre Berhan University | Data Engineering & Database Administration |
+| **2** | **Solomon Tadese** | `DBU1601626` | Debre Berhan University | ETL Pipeline & Data Transformation |
+| **3** | **Dagmawit Eshete** | `DBU1601878` | Debre Berhan University | Data Quality & Validation Rules |
+| **4** | **Jemal Yimer** | `DBU1601836` | Debre Berhan University | Memory Optimization & Reporting |
 
 ---
 

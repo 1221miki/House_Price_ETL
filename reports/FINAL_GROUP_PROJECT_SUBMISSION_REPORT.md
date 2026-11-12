@@ -3,8 +3,20 @@
 > **Project Title:** NYC Real Estate Valuation & Transaction Data Pipeline (House Price ETL)  
 > **Course:** Big Data Analytics and Business Intelligence  
 > **Instructor:** Derbew Felasman  
+> **Institution:** Debre Berhan University (DBU)  
 > **Architecture:** Python (PyArrow + Pandas) | PostgreSQL 17 Relational Database | SQLAlchemy  
-> **Submission Date:** October 2026  
+> **Submission Date:** November 2026  
+
+---
+
+### 👥 Project Group Members & Contributors
+
+| No. | Student Full Name | Student ID | Institution | Project Role / Responsibilities |
+| :---: | :--- | :---: | :---: | :--- |
+| **1** | **Asamnew Agiz** | `DBU1601394` | Debre Berhan University | Data Engineering & PostgreSQL Database Administration |
+| **2** | **Solomon Tadese** | `DBU1601626` | Debre Berhan University | ETL Pipeline Architecture & Data Transformation |
+| **3** | **Dagmawit Eshete** | `DBU1601878` | Debre Berhan University | Data Quality, Validation Rules & Market Analytics |
+| **4** | **Jemal Yimer** | `DBU1601836` | Debre Berhan University | Memory Optimization, Chunking & Technical Reporting |
 
 ---
 
