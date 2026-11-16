@@ -163,6 +163,15 @@ python scripts/run_analytics.py --export-csv
 
 ---
 
+### 5.5 Interactive Project Guide & Dataset Preview
+Generate the project overview page and open `dataset_viewer.html` in a browser:
+```bash
+python scripts/generate_html_viewer.py
+```
+The page explains the ETL workflow and the roles of Python, SQL, HTML, CSS, and JavaScript. It also provides searchable property and sale-event preview tables. Those tables contain only the preview rows; the full Parquet datasets are processed by the ETL pipeline.
+
+---
+
 ## 6. Environment Setup & Configuration
 
 ### 6.1 Prerequisites
