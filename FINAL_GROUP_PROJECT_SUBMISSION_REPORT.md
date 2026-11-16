@@ -17,6 +17,8 @@
 | **2** | **Solomon Tadese** | `DBU1601626` | Debre Berhan University | ETL Pipeline Architecture & Data Transformation |
 | **3** | **Dagmawit Eshete** | `DBU1601878` | Debre Berhan University | Data Quality, Validation Rules & Market Analytics |
 | **4** | **Jemal Yimer** | `DBU1601836` | Debre Berhan University | Memory Optimization, Chunking & Technical Reporting |
+| **5** | **Selamawit Tadese** | `1601596` | Debre Berhan University | Data Preparation & Quality Assurance |
+| **6** | **Ehitemelak Tekle Haymanot** | `1602121` | Debre Berhan University | Data Validation & Documentation Support |
 
 ---
 

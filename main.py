@@ -5,10 +5,12 @@ Instructor: Derbew Felasman
 Institution: Debre Berhan University (DBU)
 
 Group Members & Authors:
-  1. Asamnew Agiz    - ID: DBU1601394
-  2. Solomon Tadese  - ID: DBU1601626
-  3. Dagmawit Eshete - ID: DBU1601878
-  4. Jemal Yimer     - ID: DBU1601836
+  1. Asamnew Agiz             - ID: DBU1601394
+  2. Solomon Tadese           - ID: DBU1601626
+  3. Dagmawit Eshete          - ID: DBU1601878
+  4. Jemal Yimer              - ID: DBU1601836
+  5. Selamawit Tadese         - ID: 1601596
+  6. Ehitemelak Tekle Haymanot - ID: 1602121
 
 Delegates directly to pipeline.py orchestrator.
 """
