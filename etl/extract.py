@@ -27,6 +27,11 @@ def extract_parquet_chunks(
     Yields:
         pd.DataFrame containing at most chunk_size rows.
     """
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be greater than zero")
+    if max_records is not None and max_records < 0:
+        raise ValueError("max_records must be zero or greater")
+
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Parquet file not found at: {file_path}")
         

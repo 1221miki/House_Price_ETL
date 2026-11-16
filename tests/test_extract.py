@@ -3,6 +3,16 @@ from pathlib import Path
 from etl.extract import get_parquet_row_count, extract_parquet_chunks
 
 class TestExtract(unittest.TestCase):
+    def test_extract_rejects_nonpositive_chunk_size(self):
+        for chunk_size in (0, -1):
+            with self.subTest(chunk_size=chunk_size):
+                with self.assertRaises(ValueError):
+                    list(extract_parquet_chunks("unused.parquet", chunk_size=chunk_size))
+
+    def test_extract_rejects_negative_max_records(self):
+        with self.assertRaises(ValueError):
+            list(extract_parquet_chunks("unused.parquet", max_records=-1))
+
     @classmethod
     def setUpClass(cls):
         root = Path(__file__).resolve().parent.parent
