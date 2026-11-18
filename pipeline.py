@@ -233,6 +233,8 @@ def main():
     parser.add_argument("--sample", action="store_true", help="Use data/samples/ for fast demo/testing")
     parser.add_argument("--batch-size", type=int, default=int(os.getenv("BATCH_SIZE", 50000)), help="Rows per batch")
     parser.add_argument("--limit", type=int, default=None, help="Max rows to process per dataset (optional)")
+    parser.add_argument("--properties-limit", type=int, default=None, help="Max rows to process for properties (optional)")
+    parser.add_argument("--sales-limit", type=int, default=None, help="Max rows to process for sales (optional)")
     parser.add_argument("--skip-properties", action="store_true", help="Skip loading properties table")
     parser.add_argument("--skip-sales", action="store_true", help="Skip loading sales table")
     
@@ -241,6 +243,9 @@ def main():
     env_limit = os.getenv("MAX_RECORDS")
     if args.limit is None and env_limit and env_limit.strip():
         args.limit = int(env_limit.strip())
+
+    prop_limit = args.properties_limit if args.properties_limit is not None else args.limit
+    sales_limit = args.sales_limit if args.sales_limit is not None else args.limit
         
     prop_file = find_data_file("properties-00000-of-00001.parquet", use_sample=args.sample)
     sales_file = find_data_file("sale_events-00000-of-00001.parquet", use_sample=args.sample)
@@ -271,11 +276,11 @@ def main():
             
         # 3. Properties pipeline
         if not args.skip_properties:
-            run_properties_pipeline(conn, prop_file=prop_file, batch_size=args.batch_size, limit=args.limit)
+            run_properties_pipeline(conn, prop_file=prop_file, batch_size=args.batch_size, limit=prop_limit)
             
         # 4. Sales pipeline
         if not args.skip_sales:
-            run_sales_pipeline(conn, sales_file=sales_file, batch_size=args.batch_size, limit=args.limit)
+            run_sales_pipeline(conn, sales_file=sales_file, batch_size=args.batch_size, limit=sales_limit)
             
         # 5. Apply Analytical Views
         if args.apply_views:

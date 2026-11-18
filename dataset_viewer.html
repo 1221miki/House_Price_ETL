@@ -203,28 +203,27 @@
             <div class="section-card data-card">
                 <p class="data-note"><strong>About these tables:</strong> The property dataset describes parcels and their physical or assessed characteristics. The sale-events dataset records transactions. A parcel can have multiple historical sale events.</p>
                 <ul class="nav nav-pills mb-4" id="datasetTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="prop-tab" data-bs-toggle="pill" data-bs-target="#prop-pane" type="button" role="tab" aria-controls="prop-pane" aria-selected="true">
-                            Properties <span class="badge text-bg-light ms-1" id="prop-preview-count">0</span>
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="sales-tab" data-bs-toggle="pill" data-bs-target="#sales-pane" type="button" role="tab" aria-controls="sales-pane" aria-selected="false">
-                            Sale events <span class="badge text-bg-light ms-1" id="sales-preview-count">0</span>
-                        </button>
-                    </li>
-                </ul>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="prop-tab" data-bs-toggle="pill" data-bs-target="#prop-pane" type="button" role="tab" aria-controls="prop-pane" aria-selected="true">
+                        Properties <span class="badge text-bg-light ms-1" id="prop-preview-count">0</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sales-tab" data-bs-toggle="pill" data-bs-target="#sales-pane" type="button" role="tab" aria-controls="sales-pane" aria-selected="false">
+                        Sale events <span class="badge text-bg-light ms-1" id="sales-preview-count">0</span>
+                    </button>
+                </li>
+            </ul>
 
-                <div class="tab-content" id="datasetTabsContent">
-                    <div class="tab-pane fade show active" id="prop-pane" role="tabpanel">
-                        <div class="table-responsive">
-                            <table id="propTable" class="table table-striped table-hover table-bordered w-100"></table>
-                        </div>
+            <div class="tab-content" id="datasetTabsContent">
+                <div class="tab-pane fade show active" id="prop-pane" role="tabpanel">
+                    <div class="table-responsive">
+                        <table id="propTable" class="table table-striped table-hover table-bordered w-100"></table>
                     </div>
-                    <div class="tab-pane fade" id="sales-pane" role="tabpanel">
-                        <div class="table-responsive">
-                            <table id="salesTable" class="table table-striped table-hover table-bordered w-100"></table>
-                        </div>
+                </div>
+                <div class="tab-pane fade" id="sales-pane" role="tabpanel">
+                    <div class="table-responsive">
+                        <table id="salesTable" class="table table-striped table-hover table-bordered w-100"></table>
                     </div>
                 </div>
             </div>
