@@ -295,10 +295,12 @@ Exports clean CSV tables to `data/processed/` ready for insertion into presentat
 Execute the automated test suite covering all ETL components:
 
 ```bash
+pytest tests/ -v
+# or using unittest:
 python -m unittest discover tests -v
 ```
 
-### Test Suite Coverage (13 Tests Passing):
+### Test Suite Coverage (15 Tests Passing - 100% PASS):
 - `test_extract.py`: Tests Parquet metadata inspection and chunked batch generation.
 - `test_transform.py`: Tests BBL parcel ID cleaning, borough derivation, zip code padding, and derived financial metrics.
 - `test_validate.py`: Tests business validation rules and rejection counters for corrupt/anomalous rows.
@@ -314,7 +316,8 @@ python -m unittest discover tests -v
 - [x] **Python & Pandas ETL**: Full Extract, Transform, Validate, and Load stages implemented.
 - [x] **Database Management**: PostgreSQL relational schema with PK/FK logic, constraints, and indexes.
 - [x] **Analytical Queries**: 7 business SQL queries + 4 PostgreSQL views + Python automated reporting.
-- [x] **Unit Testing**: Complete `unittest` test suite with 13 passing tests.
+- [x] **Unit Testing**: Complete test suite with 15 passing tests in Pytest (100% PASS).
+- [x] **Comprehensive Report**: 21-section technical report in `FINAL_GROUP_PROJECT_SUBMISSION_REPORT.md` (and `reports/`).
 - [x] **Security**: Credentials externalized to `.env`, raw datasets and secrets ignored by `.gitignore`.
 - [x] **Timeliness**: Ready before the **28 October** deadline.
 
