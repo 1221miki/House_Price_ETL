@@ -135,7 +135,7 @@ Generate a complete, publication-ready data quality audit report:
 ```bash
 python scripts/generate_quality_report.py
 ```
-Outputs an executive audit to [`logs/data_quality_report.md`](file:///c:/Users/Student/Desktop/House_Price_ETL/House_Price_ETL/logs/data_quality_report.md) profiling:
+Outputs an executive audit to [`logs/data_quality_report.md`](logs/data_quality_report.md) profiling:
 - Null percentage breakdown per column
 - Identification of 379 nominal transfers (< $10,000) vs arms-length market sales
 - Cross-table referential integrity match rate
@@ -322,3 +322,93 @@ python -m unittest discover tests -v
 - [x] **Timeliness**: Ready before the **28 October** deadline.
 
 <!-- Verified against course brief: Big Data Analytics & BI -->
+
+---
+
+## 12. Live Presentation & Defense Guide (Terminal, PostgreSQL & Visuals)
+
+This section provides the exact demonstration flow, terminal commands, pgAdmin queries, and speaking script for presenting this project to your lecturer.
+
+### 12.1 Primary Terminal Demonstration Flow (5 Core Commands)
+Run these commands from the project root in PowerShell. The output on your terminal proves each stage of the project rubric:
+
+| No. | Command | What It Proves / Does | Rubric Stage |
+|:---:|:---|:---|:---:|
+| **1** | `python inspect_dataset.py` | Scans Parquet metadata in milliseconds without RAM overload. Proves **7,009,514 raw records** (exceeds 2M requirement). | **Data Source (Rubric #1)** |
+| **2** | `python scripts/verify_database.py` | Connects to PostgreSQL `house_price_db`; audits active row counts (2,050,000+), 9 B-Tree indexes, and 4 views. | **Database Management (Rubric #3)** |
+| **3** | `python main.py --sample` | Executes live Extract, Transform, Validate, and Load pipeline on 25k records in < 5 seconds. | **ETL with Pandas (Rubric #2)** |
+| **4** | `pytest -v` | Executes automated unit test suite. Proves **15 of 15 tests pass (100% PASS)** across all ETL modules. | **Software Quality & Validation** |
+| **5** | `python scripts/run_analytics.py` | Queries analytical SQL views; prints formatted BI summary tables and ASCII price distribution charts. | **Business Analytics (Rubric #4)** |
+
+---
+
+### 12.2 PostgreSQL pgAdmin 4 Verification Queries
+In pgAdmin 4: right-click `house_price_db` -> select **Query Tool** -> paste query -> press **F5**:
+
+#### Query 1: Exact Record Count Verification
+> **Purpose:** Proves active records loaded in both physical property and transaction tables.
+```sql
+SELECT 'properties' AS tbl, COUNT(*) FROM properties
+UNION ALL
+SELECT 'sale_events', COUNT(*) FROM sale_events;
+```
+
+#### Query 2: Relational Integrity & Foreign Key Demonstration
+> **Purpose:** Proves 1-to-many relationship between property parcels and historical sales joined via `parcel_id`.
+```sql
+SELECT p.parcel_id, p.borough,
+       s.sale_price, s.sale_date
+FROM properties p
+JOIN sale_events s
+  ON p.parcel_id = s.parcel_id
+LIMIT 10;
+```
+
+#### Query 3: Real Estate Market Analytics View
+> **Purpose:** Reads the analytical BI view displaying average prices and transaction volume by borough and year.
+```sql
+SELECT *
+FROM v_market_summary_by_borough_year
+LIMIT 10;
+```
+
+---
+
+### 12.3 Supporting & Backup Commands (Charts, Reports & UI Viewer)
+
+Use these commands if the instructor asks for graphical charts, exported CSV reports, or custom pipeline loads:
+
+| No. | Command | Purpose / Functionality | Output Location |
+|:---:|:---|:---|:---|
+| **1** | `python scripts/generate_charts.py` | Builds 5 publication-ready Matplotlib analytical charts from PostgreSQL. | `Data/processed/charts/*.png` |
+| **2** | `python scripts/run_analytics.py --export-csv` | Exports analytical view results to clean CSV files for Excel / Power BI. | `Data/processed/*.csv` |
+| **3** | `python scripts/generate_quality_report.py` | Profiles column nulls, key match rates, and $0 nominal transfers. | `logs/data_quality_report.md` |
+| **4** | `python scripts/generate_html_viewer.py` | Rebuilds offline interactive web dashboard. | `dataset_viewer.html` |
+| **5** | `python main.py --limit 10000 --skip-sales` | Runs small custom ETL batch (10,000 properties only) without sales. | Staging & PostgreSQL tables |
+
+#### Launch Visual Artifacts During Defense:
+```powershell
+# Open the Borough Average Price Chart in Windows Photos:
+Start-Process Data\processed\charts\chart1_borough_avg_price.png
+
+# Open the Interactive Web Dashboard in your browser:
+Start-Process dataset_viewer.html
+```
+
+> [!CAUTION]
+> **LIVE DEMO WARNING:**  
+> **Do NOT run `python main.py --init-db` during the live presentation!**  
+> `--init-db` drops and recreates all database tables. Only use `--sample` or `--limit` to keep your existing 2,050,000 loaded records intact.
+
+---
+
+### 12.4 Speaker Defense Script ("What to Say to Your Lecturer")
+
+| Demonstration Stage | Recommended Speaking Script | Key Technical Term to Emphasize |
+|:---|:---|:---|
+| **1. Dataset Inspection** | *"First, I verify the size and structure of our raw dataset using metadata streaming. As shown, we have 7,009,514 total records across properties and historical sales, exceeding the 2-million course requirement by 350%."* | Chunked metadata extraction, Parquet compression |
+| **2. Database Verification** | *"Here, I demonstrate that the data is successfully stored in a normalized PostgreSQL relational database with 9 B-Tree performance indexes and 4 pre-aggregated analytical views."* | 3NF Normalization, B-Tree indexing, pgAdmin 4 |
+| **3. ETL Execution** | *"I use Pandas to extract, transform, clean, and validate the records. In this live demo, our `--sample` flag processes 25,000 records end-to-end in under 5 seconds with zero RAM bloat."* | Generator streaming, `COPY FROM STDIN` bulk load |
+| **4. Automated Testing** | *"We implemented comprehensive automated unit testing using Pytest. All 15 tests pass with 100% success rate, verifying data type coercion, BBL parcel validation, and anomaly rejection."* | Pytest, Test-Driven Quality, 100% Pass Rate |
+| **5. Relational Queries** | *"These SQL queries demonstrate referential integrity: properties and sales are linked via a 10-digit standardized Borough-Block-Lot (`parcel_id`) identifier."* | Foreign Key relationship, BBL standardization |
+| **6. Business Analytics** | *"Finally, our analytics provide actionable market insights. For instance, Manhattan leads with an average price of $1.89M across 491,209 sales, while outer boroughs show accelerating price appreciation."* | BI views, Tax equity audit, Valuation trends |
